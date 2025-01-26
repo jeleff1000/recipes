@@ -5,10 +5,11 @@ import json
 import os
 from utils import search_bar, get_combined_categories
 
-# Paths to the Parquet files
-meals_parquet_file_path = 'C:\\Users\\joeye\\OneDrive\\Desktop\\recipes\\meals.parquet'
-recipes_parquet_file_path = 'C:\\Users\\joeye\\OneDrive\\Desktop\\recipes\\recipes.parquet'
-ratings_file_path = 'C:\\Users\\joeye\\OneDrive\\Desktop\\recipes\\ratings.json'
+base_dir = os.path.dirname(__file__)
+
+meals_parquet_file_path = os.path.join(base_dir, 'meals.parquet')
+recipes_parquet_file_path = os.path.join(base_dir, 'recipes.parquet')
+ratings_file_path = os.path.join(base_dir, 'ratings.json')
 
 # Load the Parquet files
 meals_df = pd.read_parquet(meals_parquet_file_path)
