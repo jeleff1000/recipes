@@ -3,7 +3,7 @@ import pandas as pd
 import re
 import json
 import os
-from utils import search_bar, get_combined_categories
+from utils import search_bar, get_combined_categories, parse_singular_ingredients, parse_instructions
 
 base_dir = os.path.dirname(__file__)
 
@@ -26,6 +26,11 @@ recipes_df = recipes_df.rename(columns={
     'inspired_by_url': 'strSource',
     'original_video_url': 'youtube'
 })
+
+# Parse singular and plural ingredient names
+recipes_df[['parsed_ingredients', 'search_ingredients']] = recipes_df['sections'].apply(parse_singular_ingredients).apply(pd.Series)
+# Parse instructions
+recipes_df['parsed_instructions'] = recipes_df['instructions'].apply(parse_instructions)
 
 # Combine the two DataFrames
 combined_df = pd.concat([meals_df, recipes_df], ignore_index=True)
@@ -75,14 +80,14 @@ if any([meal_search, category_search, area_search, tags_search, ingredients_sear
         ingredients = [item[0] or item[1] for item in ingredients]
         for ingredient in ingredients:
             if ' ' in ingredient:
-                combined_df = combined_df[combined_df['ingredients'].str.contains(re.escape(ingredient), case=False, na=False)]
+                combined_df = combined_df[combined_df['search_ingredients'].str.contains(re.escape(ingredient), case=False, na=False)]
             else:
-                combined_df = combined_df[combined_df['ingredients'].str.contains(ingredient, case=False, na=False)]
+                combined_df = combined_df[combined_df['search_ingredients'].str.contains(ingredient, case=False, na=False)]
     if vegetarian_filter:
         combined_df = combined_df[combined_df['strTags'].str.contains('Vegetarian', case=False, na=False)]
     if kosher_filter:
-        combined_df = combined_df[~combined_df['ingredients'].str.contains('shrimp|pork', case=False, na=False)]
-        combined_df = combined_df[~((combined_df['ingredients'].str.contains('meat|beef|lamb|chicken', case=False, na=False)) & (combined_df['ingredients'].str.contains('milk|cheese|yogurt|butter|sour cream', case=False, na=False)))]
+        combined_df = combined_df[~combined_df['search_ingredients'].str.contains('shrimp|pork', case=False, na=False)]
+        combined_df = combined_df[~((combined_df['search_ingredients'].str.contains('meat|beef|lamb|chicken', case=False, na=False)) & (combined_df['search_ingredients'].str.contains('milk|cheese|yogurt|butter|sour cream', case=False, na=False)))]
 
     # Sort the DataFrame alphabetically by 'strMeal'
     combined_df = combined_df.sort_values(by='strMeal', ascending=True)
@@ -96,12 +101,12 @@ if any([meal_search, category_search, area_search, tags_search, ingredients_sear
         with col2:
             st.subheader(row['strMeal'])
             with st.expander("Instructions"):
-                st.write(row['strInstructions'])
+                st.write(row['parsed_instructions'])
             st.write(f"**Source:** {row['strSource']}")
             if 'youtube' in row and isinstance(row['youtube'], str) and row['youtube']:
                 with st.expander("Video"):
                     st.video(row['youtube'])
-            st.write(f"**Ingredients:** {row['ingredients']}")
+            st.write(f"**Ingredients:** {row['parsed_ingredients']}")
 
             # Rating section
             meal_id = row['strMeal']
