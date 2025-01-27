@@ -20,6 +20,11 @@ recipes_df['source'] = 'recipes'
 # Combine the two DataFrames
 combined_df = pd.concat([meals_df, recipes_df], ignore_index=True)
 
+# Add a temporary column for video URLs
+combined_df['video_url'] = combined_df.apply(
+    lambda row: row['strYoutube'] if row['source'] == 'meals' else row.get('original_video_url', ''), axis=1
+)
+
 # Load existing ratings
 ratings_file_path = os.path.join(base_dir, 'ratings.json')
 if os.path.exists(ratings_file_path):
@@ -79,9 +84,9 @@ meal_search, category_search, area_search, tags_search, ingredients_search, min_
 
 # Map the num_ingredients to their corresponding ranges
 ingredient_ranges = {
-    'Less (0-5)': (0, 5),
-    'Moderate (6-10)': (6, 10),
-    'More (11+)': (11, float('inf'))
+    'Fewer (0-5)': (0, 5),
+    'Moderate (0-10)': (0, 10),
+    'More (0-20)': (0, 20)
 }
 min_ingredients, max_ingredients = ingredient_ranges.get(num_ingredients, (None, None))
 
@@ -166,13 +171,10 @@ if meal_search or category_search or area_search or tags_search or ingredients_s
             with st.expander("Instructions"):
                 st.write(row['strInstructions'])  # Display instructions
 
-            # Display video based on source
-            if row['source'] == 'meals' and 'strYoutube' in row and isinstance(row['strYoutube'], str) and row['strYoutube']:
+            # Display video using the temporary column
+            if row['video_url']:
                 with st.expander("Video"):
-                    st.video(row['strYoutube'])
-            elif row['source'] == 'recipes' and 'original_video_url' in row and isinstance(row['original_video_url'], str) and row['original_video_url']:
-                with st.expander("Video"):
-                    st.video(row['original_video_url'])
+                    st.video(row['video_url'])
 
             st.write(f"**Source:** {row['strSource']}")
 else:

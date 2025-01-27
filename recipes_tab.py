@@ -15,7 +15,7 @@ def load_recipes_data(base_dir):
         'country': 'strArea',
         'keywords': 'strCategory',
         'inspired_by_url': 'strSource',
-        'original_video_url': 'youtube'
+        'original_video_url': 'original_video_url'  # Correctly map the original_video_url column
     })
 
     # Convert sections column to string for display
