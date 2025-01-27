@@ -3,39 +3,21 @@ import pandas as pd
 import re
 import json
 import os
-from utils import search_bar, get_combined_categories, parse_singular_ingredients, parse_instructions
+from utils import search_bar, get_combined_categories
+from meals_tab import load_meals_data
+from recipes_tab import load_recipes_data
 
 base_dir = os.path.dirname(__file__)
 
-meals_parquet_file_path = os.path.join(base_dir, 'meals.parquet')
-recipes_parquet_file_path = os.path.join(base_dir, 'recipes.parquet')
-ratings_file_path = os.path.join(base_dir, 'ratings.json')
-
-# Load the Parquet files
-meals_df = pd.read_parquet(meals_parquet_file_path)
-recipes_df = pd.read_parquet(recipes_parquet_file_path)
-
-# Map columns from recipes_df to match meals_df
-recipes_df = recipes_df.rename(columns={
-    'name': 'strMeal',
-    'description': 'strInstructions',
-    'thumbnail_url': 'strMealThumb',
-    'tags': 'strTags',
-    'country': 'strArea',
-    'keywords': 'strCategory',
-    'inspired_by_url': 'strSource',
-    'original_video_url': 'youtube'
-})
-
-# Parse singular and plural ingredient names
-recipes_df[['parsed_ingredients', 'search_ingredients']] = recipes_df['sections'].apply(parse_singular_ingredients).apply(pd.Series)
-# Parse instructions
-recipes_df['parsed_instructions'] = recipes_df['instructions'].apply(parse_instructions)
+# Load the data
+meals_df = load_meals_data(base_dir)
+recipes_df = load_recipes_data(base_dir)
 
 # Combine the two DataFrames
 combined_df = pd.concat([meals_df, recipes_df], ignore_index=True)
 
 # Load existing ratings
+ratings_file_path = os.path.join(base_dir, 'ratings.json')
 if os.path.exists(ratings_file_path):
     with open(ratings_file_path, 'r') as f:
         ratings = json.load(f)
@@ -64,7 +46,7 @@ if honey_for_sugar:
     combined_df['ingredients'] = combined_df['ingredients'].apply(lambda x: re.sub(r'(?i)sugar', 'honey', x))
 
 # Filter the DataFrame based on the search terms
-if any([meal_search, category_search, area_search, tags_search, ingredients_search, vegetarian_filter, kosher_filter]):
+if meal_search or category_search or area_search or tags_search or ingredients_search or vegetarian_filter or kosher_filter:
     if meal_search:
         combined_df = combined_df[combined_df['strMeal'].str.contains(meal_search, case=False, na=False)]
     if category_search:
@@ -90,7 +72,10 @@ if any([meal_search, category_search, area_search, tags_search, ingredients_sear
         combined_df = combined_df[~((combined_df['search_ingredients'].str.contains('meat|beef|lamb|chicken', case=False, na=False)) & (combined_df['search_ingredients'].str.contains('milk|cheese|yogurt|butter|sour cream', case=False, na=False)))]
 
     # Sort the DataFrame alphabetically by 'strMeal'
-    combined_df = combined_df.sort_values(by='strMeal', ascending=True)
+    if 'strMeal' in combined_df.columns:
+        combined_df = combined_df.sort_values(by='strMeal', ascending=True)
+    else:
+        st.error("Column 'strMeal' not found in the DataFrame")
 
     # Display the DataFrame
     for index, row in combined_df.iterrows():
@@ -101,12 +86,13 @@ if any([meal_search, category_search, area_search, tags_search, ingredients_sear
         with col2:
             st.subheader(row['strMeal'])
             with st.expander("Instructions"):
-                st.write(row['parsed_instructions'])
+                st.write(row['parsed_instructions'])  # Display parsed instructions
             st.write(f"**Source:** {row['strSource']}")
             if 'youtube' in row and isinstance(row['youtube'], str) and row['youtube']:
                 with st.expander("Video"):
                     st.video(row['youtube'])
-            st.write(f"**Ingredients:** {row['parsed_ingredients']}")
+            with st.expander("Ingredients and Measurements"):
+                st.write(row['parsed_ingredients'])  # Display parsed ingredients and measurements
 
             # Rating section
             meal_id = row['strMeal']
@@ -123,3 +109,5 @@ if any([meal_search, category_search, area_search, tags_search, ingredients_sear
                 with open(ratings_file_path, 'w') as f:
                     json.dump(ratings, f)
                 st.success('Rating submitted!')
+else:
+    st.write("Please enter search criteria to display results.")

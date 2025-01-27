@@ -1,5 +1,14 @@
+# meals_tab.py
 import streamlit as st
+import pandas as pd
+import os
+import re
 from utils import search_bar
+
+def load_meals_data(base_dir):
+    meals_parquet_file_path = os.path.join(base_dir, 'meals.parquet')
+    meals_df = pd.read_parquet(meals_parquet_file_path)
+    return meals_df
 
 def display_meals_tab(meals_df, combined_categories):
     st.title('Meals Data')

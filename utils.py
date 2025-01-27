@@ -75,3 +75,22 @@ def parse_instructions(instructions):
         return '\n'.join(instruction_texts)
     except Exception as e:
         return ''
+
+def parse_ingredients_and_measurements(sections):
+    try:
+        if isinstance(sections, str):
+            sections = eval(sections)  # Convert string representation of list to actual list
+        ingredients_and_measurements = []
+        for section in sections:
+            for i, component in enumerate(section['components']):
+                ingredient = component['ingredient']['display_singular']
+                quantity = component['measurements'][0]['quantity']
+                unit = component['measurements'][0]['unit']['display_singular']
+                extra_comment = component['extra_comment']
+                if unit:
+                    ingredients_and_measurements.append(f"{i+1}. {quantity} {unit} of {ingredient} {extra_comment}".strip())
+                else:
+                    ingredients_and_measurements.append(f"{i+1}. {quantity} {ingredient} {extra_comment}".strip())
+        return '\n'.join(ingredients_and_measurements)
+    except Exception as e:
+        return ''
