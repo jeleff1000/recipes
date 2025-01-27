@@ -1,4 +1,3 @@
-# meals_tab.py
 import streamlit as st
 import pandas as pd
 import os
@@ -10,8 +9,22 @@ def load_meals_data(base_dir):
     meals_df = pd.read_parquet(meals_parquet_file_path)
     return meals_df
 
+def combine_ingredients_and_measurements(row):
+    ingredients = []
+    for i in range(1, 21):
+        ingredient = row[f'strIngredient{i}']
+        measurement = row[f'strMeasure{i}']
+        if pd.notna(ingredient) and pd.notna(measurement):
+            ingredients.append(f"{i}. {measurement} {ingredient}")
+        elif pd.notna(ingredient):
+            ingredients.append(f"{i}. {ingredient}")
+    return '\n'.join(ingredients)
+
 def display_meals_tab(meals_df, combined_categories):
     st.title('Meals Data')
+
+    # Apply the function to the meals DataFrame
+    meals_df['ingredients'] = meals_df.apply(combine_ingredients_and_measurements, axis=1)
 
     # Use the centralized search bar with a unique prefix
     search_results = search_bar(meals_df, combined_categories, prefix='meals_')

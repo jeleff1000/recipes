@@ -12,10 +12,14 @@ def get_combined_categories(recipes_df, meals_df):
     return sorted(refined_categories)
 
 def search_bar(df, categories, prefix=''):
+    # Determine the column names for meal titles and tags
+    meal_column = 'strMeal' if 'strMeal' in df.columns else 'name'
+    tags_column = 'strTags' if 'strTags' in df.columns else 'tags'
+
     # Create two columns for the first row of selectboxes
     col1, col2, col3 = st.columns(3)
     with col1:
-        meal_search = st.selectbox('Search by Meal:', options=[''] + sorted(df['strMeal'].unique()), index=0, key=f'{prefix}meal_search')
+        meal_search = st.selectbox('Search by Meal:', options=[''] + sorted(df[meal_column].unique()), index=0, key=f'{prefix}meal_search')
     with col2:
         category_search = st.selectbox('Search by Category:', options=[''] + sorted(categories), index=0, key=f'{prefix}category_search')
     with col3:
@@ -31,6 +35,17 @@ def search_bar(df, categories, prefix=''):
         tags_search = st.text_input('Search by Tags:', key=f'{prefix}tags_search')
     with col5:
         ingredients_search = st.text_input('Search by Ingredients:', key=f'{prefix}ingredients_search')
+    with col6:
+        star_options = [
+            '',
+            '★★★★★',
+            '★★★★☆',
+            '★★★☆☆',
+            '★★☆☆☆',
+            '★☆☆☆☆',
+            '☆☆☆☆☆'
+        ]
+        min_star_rating = st.selectbox('Minimum Star Rating:', options=star_options, index=0, key=f'{prefix}min_star_rating')
 
     # Create columns for checkboxes with thinner width
     col7, col8 = st.columns([1, 1])
@@ -47,8 +62,7 @@ def search_bar(df, categories, prefix=''):
         honey_for_sugar = st.toggle('Honey for Sugar', key=f'{prefix}honey_for_sugar')
 
     # Return all search and filter values
-    return meal_search, category_search, area_search, tags_search, ingredients_search, vegetarian_filter, kosher_filter, margarine_for_butter, applesauce_for_oil, greek_yogurt_for_sour_cream, honey_for_sugar
-
+    return meal_search, category_search, area_search, tags_search, ingredients_search, min_star_rating, vegetarian_filter, kosher_filter, margarine_for_butter, applesauce_for_oil, greek_yogurt_for_sour_cream, honey_for_sugar
 def parse_singular_ingredients(sections):
     try:
         if isinstance(sections, str):

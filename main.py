@@ -3,7 +3,7 @@ import pandas as pd
 import re
 import json
 import os
-from utils import search_bar, get_combined_categories
+from utils import search_bar, get_combined_categories, parse_ingredients_and_measurements, parse_instructions, extract_ingredients
 from meals_tab import load_meals_data
 from recipes_tab import load_recipes_data
 
@@ -12,6 +12,10 @@ base_dir = os.path.dirname(__file__)
 # Load the data
 meals_df = load_meals_data(base_dir)
 recipes_df = load_recipes_data(base_dir)
+
+# Add an index to each DataFrame
+meals_df['source'] = 'meals'
+recipes_df['source'] = 'recipes'
 
 # Combine the two DataFrames
 combined_df = pd.concat([meals_df, recipes_df], ignore_index=True)
@@ -27,12 +31,51 @@ else:
 # Get combined categories
 combined_categories = get_combined_categories(combined_df, combined_df)
 
+# Function to convert star rating string to numeric value
+def star_rating_to_numeric(star_rating):
+    star_map = {
+        '★★★★★': 5,
+        '★★★★☆': 4,
+        '★★★☆☆': 3,
+        '★★☆☆☆': 2,
+        '★☆☆☆☆': 1,
+        '☆☆☆☆☆': 0
+    }
+    return star_map.get(star_rating, 0)
+
+# Function to combine ingredients and measurements for meals
+def combine_ingredients_and_measurements(row):
+    ingredients = []
+    count = 1
+    for i in range(1, 21):
+        ingredient = row.get(f'strIngredient{i}')
+        measurement = row.get(f'strMeasure{i}')
+        if pd.notna(ingredient) and pd.notna(measurement) and ingredient.strip() and measurement.strip():
+            ingredients.append(f"{count}. {measurement} {ingredient}")
+            count += 1
+        elif pd.notna(ingredient) and ingredient.strip():
+            ingredients.append(f"{count}. {ingredient}")
+            count += 1
+    return '\n'.join(ingredients)
+
+# Function to convert instructions to numbered list
+def convert_instructions_to_numbered_list(instructions):
+    if instructions is None:
+        return ""
+    steps = instructions.split('\n')
+    numbered_steps = [f"{i+1}. {step.strip()}" for i, step in enumerate(steps) if step.strip()]
+    return '\n'.join(numbered_steps)
+
+# Apply the functions to the combined DataFrame
+combined_df['ingredients'] = combined_df.apply(lambda row: combine_ingredients_and_measurements(row) if row['source'] == 'meals' else parse_ingredients_and_measurements(row['sections']), axis=1)
+combined_df['strInstructions'] = combined_df.apply(lambda row: convert_instructions_to_numbered_list(row['strInstructions']) if row['source'] == 'meals' else parse_instructions(row['instructions']), axis=1)
+
 # Streamlit app with a single tab
 st.title("Combined Meals and Recipes Data")
 
 # Use the centralized search bar
 search_results = search_bar(combined_df, combined_categories, prefix='combined_')
-meal_search, category_search, area_search, tags_search, ingredients_search, vegetarian_filter, kosher_filter, margarine_for_butter, applesauce_for_oil, greek_yogurt_for_sour_cream, honey_for_sugar = search_results
+meal_search, category_search, area_search, tags_search, ingredients_search, min_star_rating, vegetarian_filter, kosher_filter, margarine_for_butter, applesauce_for_oil, greek_yogurt_for_sour_cream, honey_for_sugar = search_results
 
 # Apply substitutions
 combined_df['ingredients'] = combined_df['ingredients'].fillna('')
@@ -46,7 +89,7 @@ if honey_for_sugar:
     combined_df['ingredients'] = combined_df['ingredients'].apply(lambda x: re.sub(r'(?i)sugar', 'honey', x))
 
 # Filter the DataFrame based on the search terms
-if meal_search or category_search or area_search or tags_search or ingredients_search or vegetarian_filter or kosher_filter:
+if meal_search or category_search or area_search or tags_search or ingredients_search or min_star_rating or vegetarian_filter or kosher_filter:
     if meal_search:
         combined_df = combined_df[combined_df['strMeal'].str.contains(meal_search, case=False, na=False)]
     if category_search:
@@ -62,14 +105,19 @@ if meal_search or category_search or area_search or tags_search or ingredients_s
         ingredients = [item[0] or item[1] for item in ingredients]
         for ingredient in ingredients:
             if ' ' in ingredient:
-                combined_df = combined_df[combined_df['search_ingredients'].str.contains(re.escape(ingredient), case=False, na=False)]
+                combined_df = combined_df[combined_df['ingredients'].str.contains(re.escape(ingredient), case=False, na=False)]
             else:
-                combined_df = combined_df[combined_df['search_ingredients'].str.contains(ingredient, case=False, na=False)]
+                combined_df = combined_df[combined_df['ingredients'].str.contains(ingredient, case=False, na=False)]
+    if min_star_rating:
+        if min_star_rating != '':
+            min_star_rating_numeric = star_rating_to_numeric(min_star_rating)
+            combined_df['avg_rating'] = combined_df.apply(lambda row: ratings.get(row['strMeal'], {'total': 0, 'count': 0})['total'] / ratings.get(row['strMeal'], {'total': 0, 'count': 0})['count'] if ratings.get(row['strMeal'], {'total': 0, 'count': 0})['count'] > 0 else 0, axis=1)
+            combined_df = combined_df[combined_df['avg_rating'] >= min_star_rating_numeric]
     if vegetarian_filter:
         combined_df = combined_df[combined_df['strTags'].str.contains('Vegetarian', case=False, na=False)]
     if kosher_filter:
-        combined_df = combined_df[~combined_df['search_ingredients'].str.contains('shrimp|pork', case=False, na=False)]
-        combined_df = combined_df[~((combined_df['search_ingredients'].str.contains('meat|beef|lamb|chicken', case=False, na=False)) & (combined_df['search_ingredients'].str.contains('milk|cheese|yogurt|butter|sour cream', case=False, na=False)))]
+        combined_df = combined_df[~combined_df['ingredients'].str.contains('shrimp|pork', case=False, na=False)]
+        combined_df = combined_df[~((combined_df['ingredients'].str.contains('meat|beef|lamb|chicken', case=False, na=False)) & (combined_df['ingredients'].str.contains('milk|cheese|yogurt|butter|sour cream', case=False, na=False)))]
 
     # Sort the DataFrame alphabetically by 'strMeal'
     if 'strMeal' in combined_df.columns:
@@ -85,14 +133,6 @@ if meal_search or category_search or area_search or tags_search or ingredients_s
             st.image(row['strMealThumb'], caption=row['strMeal'], use_container_width=True)
         with col2:
             st.subheader(row['strMeal'])
-            with st.expander("Instructions"):
-                st.write(row['parsed_instructions'])  # Display parsed instructions
-            st.write(f"**Source:** {row['strSource']}")
-            if 'youtube' in row and isinstance(row['youtube'], str) and row['youtube']:
-                with st.expander("Video"):
-                    st.video(row['youtube'])
-            with st.expander("Ingredients and Measurements"):
-                st.write(row['parsed_ingredients'])  # Display parsed ingredients and measurements
 
             # Rating section
             meal_id = row['strMeal']
@@ -109,5 +149,21 @@ if meal_search or category_search or area_search or tags_search or ingredients_s
                 with open(ratings_file_path, 'w') as f:
                     json.dump(ratings, f)
                 st.success('Rating submitted!')
+
+            with st.expander("Ingredients and Measurements"):
+                st.write(row['ingredients'])  # Display combined ingredients and measurements
+
+            with st.expander("Instructions"):
+                st.write(row['strInstructions'])  # Display instructions
+
+            # Display video based on source
+            if row['source'] == 'meals' and 'strYoutube' in row and isinstance(row['strYoutube'], str) and row['strYoutube']:
+                with st.expander("Video"):
+                    st.video(row['strYoutube'])
+            elif row['source'] == 'recipes' and 'original_video_url' in row and isinstance(row['original_video_url'], str) and row['original_video_url']:
+                with st.expander("Video"):
+                    st.video(row['original_video_url'])
+
+            st.write(f"**Source:** {row['strSource']}")
 else:
     st.write("Please enter search criteria to display results.")
