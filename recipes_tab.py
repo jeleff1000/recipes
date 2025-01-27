@@ -1,6 +1,6 @@
 import pandas as pd
 import os
-from utils import parse_instructions, parse_ingredients_and_measurements
+from utils import parse_instructions, parse_ingredients_and_measurements, extract_ingredients
 
 def load_recipes_data(base_dir):
     recipes_parquet_file_path = os.path.join(base_dir, 'recipes.parquet')
@@ -26,5 +26,8 @@ def load_recipes_data(base_dir):
 
     # Parse ingredients and measurements
     recipes_df['parsed_ingredients'] = recipes_df['sections'].apply(parse_ingredients_and_measurements)
+
+    # Extract ingredients for search
+    recipes_df['search_ingredients'] = recipes_df['sections'].apply(extract_ingredients)
 
     return recipes_df

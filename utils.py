@@ -94,3 +94,16 @@ def parse_ingredients_and_measurements(sections):
         return '\n'.join(ingredients_and_measurements)
     except Exception as e:
         return ''
+
+def extract_ingredients(sections):
+    try:
+        if isinstance(sections, str):
+            sections = eval(sections)  # Convert string representation of list to actual list
+        ingredients = []
+        for section in sections:
+            for component in section['components']:
+                ingredient = component['ingredient']['display_singular']
+                ingredients.append(ingredient)
+        return ', '.join(ingredients)
+    except Exception as e:
+        return ''
