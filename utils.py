@@ -61,8 +61,12 @@ def search_bar(df, categories, prefix=''):
         greek_yogurt_for_sour_cream = st.toggle('Greek Yogurt for Sour Cream', key=f'{prefix}greek_yogurt_for_sour_cream')
         honey_for_sugar = st.toggle('Honey for Sugar', key=f'{prefix}honey_for_sugar')
 
+    # Add a selectbox for the number of ingredients
+    ingredient_options = ['', 'Fewer (0-5)', 'Moderate (0-10)', 'More (0-20)']
+    num_ingredients = st.selectbox('Number of Ingredients:', options=ingredient_options, index=0, key=f'{prefix}num_ingredients')
+
     # Return all search and filter values
-    return meal_search, category_search, area_search, tags_search, ingredients_search, min_star_rating, vegetarian_filter, kosher_filter, margarine_for_butter, applesauce_for_oil, greek_yogurt_for_sour_cream, honey_for_sugar
+    return meal_search, category_search, area_search, tags_search, ingredients_search, min_star_rating, vegetarian_filter, kosher_filter, margarine_for_butter, applesauce_for_oil, greek_yogurt_for_sour_cream, honey_for_sugar, num_ingredients
 def parse_singular_ingredients(sections):
     try:
         if isinstance(sections, str):

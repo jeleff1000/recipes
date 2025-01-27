@@ -75,7 +75,15 @@ st.title("Combined Meals and Recipes Data")
 
 # Use the centralized search bar
 search_results = search_bar(combined_df, combined_categories, prefix='combined_')
-meal_search, category_search, area_search, tags_search, ingredients_search, min_star_rating, vegetarian_filter, kosher_filter, margarine_for_butter, applesauce_for_oil, greek_yogurt_for_sour_cream, honey_for_sugar = search_results
+meal_search, category_search, area_search, tags_search, ingredients_search, min_star_rating, vegetarian_filter, kosher_filter, margarine_for_butter, applesauce_for_oil, greek_yogurt_for_sour_cream, honey_for_sugar, num_ingredients = search_results
+
+# Map the num_ingredients to their corresponding ranges
+ingredient_ranges = {
+    'Less (0-5)': (0, 5),
+    'Moderate (6-10)': (6, 10),
+    'More (11+)': (11, float('inf'))
+}
+min_ingredients, max_ingredients = ingredient_ranges.get(num_ingredients, (None, None))
 
 # Apply substitutions
 combined_df['ingredients'] = combined_df['ingredients'].fillna('')
@@ -89,7 +97,7 @@ if honey_for_sugar:
     combined_df['ingredients'] = combined_df['ingredients'].apply(lambda x: re.sub(r'(?i)sugar', 'honey', x))
 
 # Filter the DataFrame based on the search terms
-if meal_search or category_search or area_search or tags_search or ingredients_search or min_star_rating or vegetarian_filter or kosher_filter:
+if meal_search or category_search or area_search or tags_search or ingredients_search or min_star_rating or vegetarian_filter or kosher_filter or num_ingredients:
     if meal_search:
         combined_df = combined_df[combined_df['strMeal'].str.contains(meal_search, case=False, na=False)]
     if category_search:
@@ -118,6 +126,8 @@ if meal_search or category_search or area_search or tags_search or ingredients_s
     if kosher_filter:
         combined_df = combined_df[~combined_df['ingredients'].str.contains('shrimp|pork', case=False, na=False)]
         combined_df = combined_df[~((combined_df['ingredients'].str.contains('meat|beef|lamb|chicken', case=False, na=False)) & (combined_df['ingredients'].str.contains('milk|cheese|yogurt|butter|sour cream', case=False, na=False)))]
+    if min_ingredients is not None and max_ingredients is not None:
+        combined_df = combined_df[combined_df['ingredients'].apply(lambda x: min_ingredients <= len(x.split('\n')) <= max_ingredients)]
 
     # Sort the DataFrame alphabetically by 'strMeal'
     if 'strMeal' in combined_df.columns:
