@@ -20,11 +20,20 @@ def combine_ingredients_and_measurements(row):
             ingredients.append(f"{i}. {ingredient}")
     return '\n'.join(ingredients)
 
+def isolate_ingredients(row):
+    ingredients = []
+    for i in range(1, 21):
+        ingredient = row[f'strIngredient{i}']
+        if pd.notna(ingredient):
+            ingredients.append(ingredient)
+    return ', '.join(ingredients)
+
 def display_meals_tab(meals_df, combined_categories):
     st.title('Meals Data')
 
     # Apply the function to the meals DataFrame
     meals_df['ingredients'] = meals_df.apply(combine_ingredients_and_measurements, axis=1)
+    meals_df['isolated_ingredients'] = meals_df.apply(isolate_ingredients, axis=1)
 
     # Use the centralized search bar with a unique prefix
     search_results = search_bar(meals_df, combined_categories, prefix='meals_')
@@ -75,5 +84,6 @@ def display_meals_tab(meals_df, combined_categories):
                     with st.expander("Video"):
                         st.video(row['strYoutube'])
                 st.write(f"**Ingredients:** {row['ingredients']}")
+                st.write(f"**Isolated Ingredients:** {row['isolated_ingredients']}")
     else:
         st.write("Please enter search criteria to display results.")

@@ -30,4 +30,7 @@ def load_recipes_data(base_dir):
     # Extract ingredients for search
     recipes_df['search_ingredients'] = recipes_df['sections'].apply(extract_ingredients)
 
+    # Use search_ingredients for isolated_ingredients
+    recipes_df['isolated_ingredients'] = recipes_df['search_ingredients']
+
     return recipes_df

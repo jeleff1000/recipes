@@ -7,6 +7,7 @@ from utils import search_bar, get_combined_categories, parse_ingredients_and_mea
 from meals_tab import load_meals_data
 from recipes_tab import load_recipes_data
 from spoonacular_tab import load_spoonacular_data
+from similarity import find_top_similar_items
 
 base_dir = os.path.dirname(__file__)
 
@@ -28,15 +29,24 @@ combined_df['video_url'] = combined_df.apply(
     lambda row: row['strYoutube'] if row['source'] == 'meals' else row.get('original_video_url', ''), axis=1
 )
 
+# Add isolated ingredients column
+def get_isolated_ingredients(row):
+    if pd.notna(row.get('isolated_ingredients')) and row['isolated_ingredients'].strip():
+        return row['isolated_ingredients']
+    if row['source'] == 'meals':
+        return ', '.join([row[f'strIngredient{i}'] for i in range(1, 21) if pd.notna(row.get(f'strIngredient{i}'))])
+    elif row['source'] == 'recipes' or row['source'] == 'spoonacular':
+        return ', '.join(row['search_ingredients']) if isinstance(row['search_ingredients'], list) else row['search_ingredients']
+    else:
+        return ''
+
+combined_df['isolated_ingredients'] = combined_df.apply(get_isolated_ingredients, axis=1)
+
+# Create a separate DataFrame with only strMeal and isolated_ingredients
+df_strMeal_isolated_ingredients = combined_df[['strMeal', 'isolated_ingredients']].copy()
+
 # Find the row with the meal name "Farfalle with Peas, Ham and Cream"
 farfalle_row = combined_df[combined_df['strMeal'] == 'Farfalle with Peas, Ham and Cream']
-
-# Display the parsed ingredients for that row in the Streamlit app
-if not farfalle_row.empty:
-    st.write("Parsed Ingredients for Farfalle with Peas, Ham and Cream:")
-    st.write(farfalle_row['parsed_ingredients'].values[0])
-else:
-    st.write("Meal not found")
 
 # Load existing ratings
 ratings_file_path = os.path.join(base_dir, 'ratings.json')
@@ -147,7 +157,9 @@ if meal_search or category_search or area_search or tags_search or ingredients_s
     if vegetarian_filter:
         combined_df = combined_df[combined_df['strTags'].str.contains('Vegetarian', case=False, na=False)]
     if kosher_filter:
-        combined_df = combined_df[~combined_df['ingredients'].str.contains('shrimp|pork', case=False, na=False)]
+        non_kosher_ingredients = 'shrimp|pork|lobster|bacon|crab|clams|oysters|scallops|mussels'
+        combined_df = combined_df[
+            ~combined_df['ingredients'].str.contains(non_kosher_ingredients, case=False, na=False)]
         combined_df = combined_df[~((combined_df['ingredients'].str.contains('meat|beef|lamb|chicken', case=False, na=False)) & (combined_df['ingredients'].str.contains('milk|cheese|yogurt|butter|sour cream', case=False, na=False)))]
     if min_ingredients is not None and max_ingredients is not None:
         combined_df = combined_df[combined_df['ingredients'].apply(lambda x: min_ingredients <= len(x.split('\n')) <= max_ingredients)]
@@ -163,7 +175,10 @@ if meal_search or category_search or area_search or tags_search or ingredients_s
         col1, col2 = st.columns([1, 3])
         with col1:
             st.markdown("<br><br>", unsafe_allow_html=True)  # Add vertical space above the image
-            st.image(row['strMealThumb'], caption=row['strMeal'], use_container_width=True)
+            if row['strMealThumb'] is not None:
+                st.image(row['strMealThumb'], caption=row['strMeal'], use_container_width=True)
+            else:
+                st.write("Image not available")
         with col2:
             st.subheader(row['strMeal'])
 
@@ -190,14 +205,25 @@ if meal_search or category_search or area_search or tags_search or ingredients_s
                 st.write(row['strInstructions'])  # Display instructions
 
             # Display video using the temporary column
-            if row['video_url']:
+            if row['video_url'] and row['video_url'].startswith('http'):
                 with st.expander("Video"):
                     st.video(row['video_url'])
+            else:
+                st.write("No valid video URL available.")
+
+            # Display similarity information
+            with st.expander("Similarity"):
+                top_similar_items = find_top_similar_items(row['isolated_ingredients'], df_strMeal_isolated_ingredients)
+                for sim_index, sim_row in top_similar_items.iterrows():
+                    st.write(f"{sim_row['strMeal']} - Similarity: {sim_row['similarity']:.2f}")
 
             st.write(f"**Source:** {row['strSource']}")
 else:
     st.write("Please enter search criteria to display results.")
 
-# Display the combined DataFrame at the bottom
-st.write("Combined DataFrame:")
-st.dataframe(combined_df)
+# Remove or comment out the lines displaying the DataFrames
+# st.write("Combined DataFrame:")
+# st.dataframe(combined_df)
+
+# st.write("DataFrame with strMeal and isolated_ingredients:")
+# st.dataframe(df_strMeal_isolated_ingredients)
