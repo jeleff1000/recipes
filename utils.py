@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 import re
+import ast
+from bs4 import BeautifulSoup
 
 def get_combined_categories(recipes_df, meals_df):
     # Define the refined categories
@@ -67,6 +69,29 @@ def search_bar(df, categories, prefix=''):
 
     # Return all search and filter values
     return meal_search, category_search, area_search, tags_search, ingredients_search, min_star_rating, vegetarian_filter, kosher_filter, margarine_for_butter, applesauce_for_oil, greek_yogurt_for_sour_cream, honey_for_sugar, num_ingredients
+
+def parse_extended_ingredients(extended_ingredients_str):
+    """Parse the extendedIngredients column to extract ingredients and measurements."""
+    try:
+        extended_ingredients = ast.literal_eval(extended_ingredients_str)
+        ingredients_list = []
+        for i, ingredient in enumerate(extended_ingredients, start=1):
+            original = ingredient.get('original', '')
+            if original:
+                ingredients_list.append(f"{i}. {original}")
+        return '\n'.join(ingredients_list)
+    except (ValueError, SyntaxError):
+        return ''
+
+def parse_html_instructions(instructions_html):
+    """Parse the HTML instructions to extract and format the text."""
+    try:
+        soup = BeautifulSoup(instructions_html, 'html.parser')
+        instructions_list = [f"{i+1}. {li.get_text()}" for i, li in enumerate(soup.find_all('li'))]
+        return '\n'.join(instructions_list)
+    except Exception as e:
+        return ''
+
 def parse_singular_ingredients(sections):
     try:
         if isinstance(sections, str):
@@ -123,5 +148,14 @@ def extract_ingredients(sections):
                 ingredient = component['ingredient']['display_singular']
                 ingredients.append(ingredient)
         return ', '.join(ingredients)
+    except Exception as e:
+        return ''
+
+def convert_instructions_to_numbered_list(instructions):
+    """Convert plain text instructions to a numbered list format."""
+    try:
+        instructions_list = instructions.split('. ')
+        numbered_instructions = [f"{i+1}. {instruction.strip()}" for i, instruction in enumerate(instructions_list) if instruction]
+        return '\n'.join(numbered_instructions)
     except Exception as e:
         return ''

@@ -6,24 +6,37 @@ import os
 from utils import search_bar, get_combined_categories, parse_ingredients_and_measurements, parse_instructions, extract_ingredients
 from meals_tab import load_meals_data
 from recipes_tab import load_recipes_data
+from spoonacular_tab import load_spoonacular_data
 
 base_dir = os.path.dirname(__file__)
 
 # Load the data
 meals_df = load_meals_data(base_dir)
 recipes_df = load_recipes_data(base_dir)
+spoonacular_df = load_spoonacular_data(base_dir)
 
 # Add an index to each DataFrame
 meals_df['source'] = 'meals'
 recipes_df['source'] = 'recipes'
+spoonacular_df['source'] = 'spoonacular'
 
-# Combine the two DataFrames
-combined_df = pd.concat([meals_df, recipes_df], ignore_index=True)
+# Combine the three DataFrames
+combined_df = pd.concat([meals_df, recipes_df, spoonacular_df], ignore_index=True)
 
 # Add a temporary column for video URLs
 combined_df['video_url'] = combined_df.apply(
     lambda row: row['strYoutube'] if row['source'] == 'meals' else row.get('original_video_url', ''), axis=1
 )
+
+# Find the row with the meal name "Farfalle with Peas, Ham and Cream"
+farfalle_row = combined_df[combined_df['strMeal'] == 'Farfalle with Peas, Ham and Cream']
+
+# Display the parsed ingredients for that row in the Streamlit app
+if not farfalle_row.empty:
+    st.write("Parsed Ingredients for Farfalle with Peas, Ham and Cream:")
+    st.write(farfalle_row['parsed_ingredients'].values[0])
+else:
+    st.write("Meal not found")
 
 # Load existing ratings
 ratings_file_path = os.path.join(base_dir, 'ratings.json')
@@ -72,8 +85,13 @@ def convert_instructions_to_numbered_list(instructions):
     return '\n'.join(numbered_steps)
 
 # Apply the functions to the combined DataFrame
-combined_df['ingredients'] = combined_df.apply(lambda row: combine_ingredients_and_measurements(row) if row['source'] == 'meals' else parse_ingredients_and_measurements(row['sections']), axis=1)
-combined_df['strInstructions'] = combined_df.apply(lambda row: convert_instructions_to_numbered_list(row['strInstructions']) if row['source'] == 'meals' else parse_instructions(row['instructions']), axis=1)
+combined_df['ingredients'] = combined_df.apply(lambda row: combine_ingredients_and_measurements(row) if row['source'] == 'meals' else row['parsed_ingredients_spoonacular'] if row['source'] == 'spoonacular' else row['parsed_ingredients'], axis=1)
+combined_df['strInstructions'] = combined_df.apply(
+    lambda row: convert_instructions_to_numbered_list(row['strInstructions']) if row['source'] == 'meals'
+    else row['temp_parsed_instructions'] if row['source'] == 'spoonacular'
+    else parse_instructions(row['instructions']),
+    axis=1
+)
 
 # Streamlit app with a single tab
 st.title("Combined Meals and Recipes Data")
@@ -179,3 +197,7 @@ if meal_search or category_search or area_search or tags_search or ingredients_s
             st.write(f"**Source:** {row['strSource']}")
 else:
     st.write("Please enter search criteria to display results.")
+
+# Display the combined DataFrame at the bottom
+st.write("Combined DataFrame:")
+st.dataframe(combined_df)
