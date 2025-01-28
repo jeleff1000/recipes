@@ -66,7 +66,7 @@ def search_bar(df, categories, prefix=''):
         honey_for_sugar = st.toggle('Honey for Sugar', key=f'{prefix}honey_for_sugar')
 
     # Add a selectbox for the number of ingredients
-    ingredient_options = ['', 'Fewer (0-5)', 'Moderate (0-10)', 'More (0-20)']
+    ingredient_options = ['', 'Fewer (0-5)', 'Moderate (0-10)', 'More (0-100)']
     num_ingredients = st.selectbox('Number of Ingredients:', options=ingredient_options, index=0, key=f'{prefix}num_ingredients')
 
     # Return all search and filter values
