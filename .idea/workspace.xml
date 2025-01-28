@@ -4,13 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="126056f8-3dec-4429-95d9-728a782f61a8" name="Changes" comment="paths">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/meals_tab.py" beforeDir="false" afterPath="$PROJECT_DIR$/meals_tab.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/recipes_tab.py" beforeDir="false" afterPath="$PROJECT_DIR$/recipes_tab.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/spoonacular_tab.py" beforeDir="false" afterPath="$PROJECT_DIR$/spoonacular_tab.py" afterDir="false" />
-    </list>
+    <list default="true" id="126056f8-3dec-4429-95d9-728a782f61a8" name="Changes" comment="paths" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -164,7 +158,23 @@
       <option name="project" value="LOCAL" />
       <updated>1738025386280</updated>
     </task>
-    <option name="localTasksCounter" value="10" />
+    <task id="LOCAL-00010" summary="paths">
+      <option name="closed" value="true" />
+      <created>1738034430757</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1738034430757</updated>
+    </task>
+    <task id="LOCAL-00011" summary="paths">
+      <option name="closed" value="true" />
+      <created>1738034439883</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1738034439883</updated>
+    </task>
+    <option name="localTasksCounter" value="12" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
