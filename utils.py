@@ -18,10 +18,12 @@ def search_bar(df, categories, prefix=''):
     meal_column = 'strMeal' if 'strMeal' in df.columns else 'name'
     tags_column = 'strTags' if 'strTags' in df.columns else 'tags'
 
-    # Create two columns for the first row of selectboxes
+    # Create two columns for the first row of inputs
     col1, col2, col3 = st.columns(3)
     with col1:
-        meal_search = st.selectbox('Search by Meal:', options=[''] + sorted(df[meal_column].unique()), index=0, key=f'{prefix}meal_search')
+        meal_search = st.text_input('Search by Meal:', key=f'{prefix}meal_search')
+        if meal_search:
+            df = df[df[meal_column].str.contains(meal_search, case=False, na=False)]
     with col2:
         category_search = st.selectbox('Search by Category:', options=[''] + sorted(categories), index=0, key=f'{prefix}category_search')
     with col3:

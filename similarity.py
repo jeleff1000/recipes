@@ -8,12 +8,11 @@ def jaccard_similarity(list1, list2):
 
 def calculate_similarity(search_ingredients, df):
     search_set = set(filter(None, search_ingredients.lower().split(', ')))
-    print(f"Search Set: {search_set}")
+
 
     def similarity(ingredients):
         ingredients_set = set(filter(None, ingredients.lower().split(', ')))
         sim = jaccard_similarity(search_set, ingredients_set)
-        print(f"Ingredients: {ingredients_set}, Similarity: {sim}")
         return sim
 
     df['similarity'] = df['isolated_ingredients'].apply(similarity)
