@@ -9,7 +9,7 @@ def get_combined_categories(recipes_df, meals_df):
     refined_categories = [
         'Soup', 'Dressing', 'Easy', 'Healthy', 'Salad', 'Dairy Free', 'Snacks', 'Treats',
         'Vegan', 'Vegetarian', 'Dessert', 'Breakfast', 'Baking', 'Side Dish', 'Brunch',
-        'Alcohol', 'Dinner'
+        'Alcohol', 'Dinner', 'Side', 'Lunch', 'Main'
     ]
     return sorted(refined_categories)
 
@@ -17,6 +17,7 @@ def search_bar(df, categories, prefix=''):
     # Determine the column names for meal titles and tags
     meal_column = 'strMeal' if 'strMeal' in df.columns else 'name'
     tags_column = 'strTags' if 'strTags' in df.columns else 'tags'
+    dish_types_column = 'parsed_dish_types' if 'parsed_dish_types' in df.columns else None
 
     # Create two columns for the first row of inputs
     col1, col2, col3 = st.columns(3)

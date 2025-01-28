@@ -95,7 +95,7 @@ def convert_instructions_to_numbered_list(instructions):
     return '\n'.join(numbered_steps)
 
 # Apply the functions to the combined DataFrame
-combined_df['ingredients'] = combined_df.apply(lambda row: combine_ingredients_and_measurements(row) if row['source'] == 'meals' else row['parsed_ingredients_spoonacular'] if row['source'] == 'spoonacular' else row['parsed_ingredients'], axis=1)
+combined_df['ingredients'] = combined_df.apply(lambda row: combine_ingredients_and_measurements(row) if row['source'] == 'meals' else row['parsed_ingredients'] if row['source'] == 'spoonacular' else row['parsed_ingredients'], axis=1)
 combined_df['strInstructions'] = combined_df.apply(
     lambda row: convert_instructions_to_numbered_list(row['strInstructions']) if row['source'] == 'meals'
     else row['temp_parsed_instructions'] if row['source'] == 'spoonacular'
@@ -134,7 +134,10 @@ if meal_search or category_search or area_search or tags_search or ingredients_s
     if meal_search:
         combined_df = combined_df[combined_df['strMeal'].str.contains(meal_search, case=False, na=False)]
     if category_search:
-        combined_df = combined_df[combined_df['strTags'].str.contains(category_search, case=False, na=False)]
+        if 'spoonacular' in combined_df['source'].unique():
+            combined_df = combined_df[combined_df['parsed_dish_types'].str.contains(category_search, case=False, na=False)]
+        else:
+            combined_df = combined_df[combined_df['strTags'].str.contains(category_search, case=False, na=False)]
     if area_search:
         combined_df = combined_df[combined_df['strTags'].str.contains(area_search, case=False, na=False)]
     if tags_search:
@@ -222,8 +225,8 @@ else:
     st.write("Please enter search criteria to display results.")
 
 # Remove or comment out the lines displaying the DataFrames
-# st.write("Combined DataFrame:")
-# st.dataframe(combined_df)
+#st.write("Combined DataFrame:")
+#st.dataframe(combined_df)
 
 # st.write("DataFrame with strMeal and isolated_ingredients:")
 # st.dataframe(df_strMeal_isolated_ingredients)
