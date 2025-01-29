@@ -155,14 +155,29 @@ if meal_search or category_search or area_search or tags_search or ingredients_s
             combined_df['avg_rating'] = combined_df.apply(lambda row: ratings.get(row['strMeal'], {'total': 0, 'count': 0})['total'] / ratings.get(row['strMeal'], {'total': 0, 'count': 0})['count'] if ratings.get(row['strMeal'], {'total': 0, 'count': 0})['count'] > 0 else 0, axis=1)
             combined_df = combined_df[combined_df['avg_rating'] >= min_star_rating_numeric]
     if vegetarian_filter:
-        combined_df = combined_df[combined_df['strTags'].str.contains('Vegetarian', case=False, na=False)]
-    if kosher_filter:
-        non_kosher_ingredients = 'shrimp|pork|lobster|bacon|crab|clams|oysters|scallops|mussels'
+        non_vegetarian_ingredients = 'beef|pork|chicken|turkey|lamb|veal|venison|duck|goose|rabbit|bison|goat|ham|bacon|sausage|salami|pepperoni|prosciutto|anchovies|tuna|salmon|shrimp|crab|lobster|clams|mussels|oysters|scallops'
         combined_df = combined_df[
-            ~combined_df['ingredients'].str.contains(non_kosher_ingredients, case=False, na=False)]
-        combined_df = combined_df[~((combined_df['ingredients'].str.contains('meat|beef|lamb|chicken', case=False, na=False)) & (combined_df['ingredients'].str.contains('milk|cheese|yogurt|butter|sour cream', case=False, na=False)))]
+            ~combined_df['ingredients'].str.contains(non_vegetarian_ingredients, case=False, na=False)]
+    if kosher_filter:
+        non_kosher_ingredients = (
+            'shrimp|pork|ham|bacon|lobster|crab|clams|oysters|scallops|mussels|'
+            'shellfish|catfish|eel|frog|octopus|squid|snail|caviar|sturgeon'
+        )
+        combined_df = combined_df[
+            ~combined_df['ingredients'].str.contains(non_kosher_ingredients, case=False, na=False)
+        ]
+        meat_ingredients = (
+            'meat|beef|lamb|chicken|turkey|veal|venison|duck|goose|rabbit|bison|goat|'
+            'sausage|salami|pepperoni|prosciutto|shrimp|crab|lobster|'
+            'clams|mussels|oysters|scallops'
+        )
+        combined_df = combined_df[
+            ~((combined_df['ingredients'].str.contains(meat_ingredients, case=False, na=False)) &
+              (combined_df['ingredients'].str.contains('milk|cheese|yogurt|butter|sour cream', case=False, na=False)))
+        ]
     if min_ingredients is not None and max_ingredients is not None:
-        combined_df = combined_df[combined_df['ingredients'].apply(lambda x: min_ingredients <= len(x.split('\n')) <= max_ingredients)]
+        combined_df = combined_df[
+            combined_df['ingredients'].apply(lambda x: min_ingredients <= len(x.split('\n')) <= max_ingredients)]
 
     # Sort the DataFrame alphabetically by 'strMeal'
     if 'strMeal' in combined_df.columns:
@@ -212,7 +227,7 @@ if meal_search or category_search or area_search or tags_search or ingredients_s
                 st.write("No valid video URL available.")
 
             # Display similarity information
-            with st.expander("Similarity"):
+            with st.expander("Similar Items"):
                 top_similar_items = find_top_similar_items(row['isolated_ingredients'], similarity_df)
                 for sim_index, sim_row in top_similar_items.iterrows():
                     st.write(f"**{sim_row['strMeal']}**")
