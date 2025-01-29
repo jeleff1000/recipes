@@ -1,5 +1,5 @@
-import streamlit as st
 import pandas as pd
+import streamlit as st
 import re
 import json
 import os
@@ -148,8 +148,7 @@ if meal_search or category_search or area_search or tags_search or ingredients_s
             plural_ingredient = ingredient + 's?'
             if ' ' in ingredient:
                 combined_df = combined_df[
-                    combined_df['ingredients'].str.contains(r'\b' + re.escape(plural_ingredient) + r'\b', case=False,
-                                                            na=False)]
+                    combined_df['ingredients'].str.contains(r'\b' + re.escape(plural_ingredient) + r'\b', case=False, na=False)]
             else:
                 combined_df = combined_df[
                     combined_df['ingredients'].str.contains(r'\b' + plural_ingredient + r'\b', case=False, na=False)]
@@ -170,8 +169,7 @@ if meal_search or category_search or area_search or tags_search or ingredients_s
         meat_ingredients = r'\b(meat|beef|lamb|chicken|turkey|veal|venison|duck|goose|rabbit|bison|goat|sausage|salami|pepperoni|prosciutto|shrimp|crab|lobster|clams|mussels|oysters|scallops)\b'
         combined_df = combined_df[
             ~((combined_df['ingredients'].str.contains(meat_ingredients, case=False, na=False)) &
-              (combined_df['ingredients'].str.contains(r'\b(milk|cheese|yogurt|butter|sour cream)\b', case=False,
-                                                       na=False)))
+              (combined_df['ingredients'].str.contains(r'\b(milk|cheese|yogurt|butter|sour cream)\b', case=False, na=False)))
         ]
     if min_ingredients is not None and max_ingredients is not None:
         combined_df = combined_df[
@@ -226,11 +224,12 @@ if meal_search or category_search or area_search or tags_search or ingredients_s
 
             # Display similarity information
             with st.expander("Similar Items"):
-                top_similar_items = find_top_similar_items(row['isolated_ingredients'], similarity_df)
+                top_similar_items = find_top_similar_items(row['isolated_ingredients'], row['strMeal'], similarity_df)
                 for sim_index, sim_row in top_similar_items.iterrows():
                     st.write(f"**{sim_row['strMeal']}**")
-                    st.image(sim_row['strMealThumb'], width=100)  # Make the image smaller
-
-            st.write(f"**Source:** {row['strSource']}")
+                    if sim_row['strMealThumb'] is not None:
+                        st.image(sim_row['strMealThumb'], width=100)  # Make the image smaller
+                    else:
+                        st.write("Image not available")
 else:
     st.write("Please enter search criteria to display results.")

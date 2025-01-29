@@ -9,7 +9,7 @@ def get_combined_categories(recipes_df, meals_df):
     refined_categories = [
         'Soup', 'Dressing', 'Easy', 'Healthy', 'Salad', 'Dairy Free', 'Snacks', 'Treats',
         'Vegan', 'Vegetarian', 'Dessert', 'Breakfast', 'Baking', 'Side Dish', 'Brunch',
-        'Alcohol', 'Dinner', 'Side', 'Lunch', 'Main'
+        'Alcohol', 'Dinner', 'Side', 'Lunch', 'Main', 'Appetizer'
     ]
     return sorted(refined_categories)
 
@@ -27,6 +27,9 @@ def search_bar(df, categories, prefix=''):
             df = df[df[meal_column].str.contains(meal_search, case=False, na=False)]
     with col2:
         category_search = st.selectbox('Search by Category:', options=[''] + sorted(categories), index=0, key=f'{prefix}category_search')
+        if category_search:
+            category_search = category_search.replace('Snacks', 'Snacks?')
+            df = df[df[tags_column].str.contains(category_search, case=False, na=False)]
     with col3:
         area_search = st.selectbox('Search by Region:', options=[''] + sorted([
             'American', 'British', 'Canadian', 'Chinese', 'Croatian', 'Dutch', 'Egyptian', 'Filipino', 'French', 'Greek',
@@ -72,7 +75,6 @@ def search_bar(df, categories, prefix=''):
 
     # Return all search and filter values
     return meal_search, category_search, area_search, tags_search, ingredients_search, min_star_rating, vegetarian_filter, kosher_filter, margarine_for_butter, applesauce_for_oil, greek_yogurt_for_sour_cream, honey_for_sugar, num_ingredients
-
 def parse_extended_ingredients(extended_ingredients_str):
     """Parse the extendedIngredients column to extract ingredients and measurements."""
     try:
