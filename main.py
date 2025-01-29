@@ -42,11 +42,8 @@ def get_isolated_ingredients(row):
 
 combined_df['isolated_ingredients'] = combined_df.apply(get_isolated_ingredients, axis=1)
 
-# Create a separate DataFrame with only strMeal and isolated_ingredients
-df_strMeal_isolated_ingredients = combined_df[['strMeal', 'isolated_ingredients']].copy()
-
-# Find the row with the meal name "Farfalle with Peas, Ham and Cream"
-farfalle_row = combined_df[combined_df['strMeal'] == 'Farfalle with Peas, Ham and Cream']
+# Create a separate DataFrame for similarity calculations
+similarity_df = combined_df[['strMeal', 'isolated_ingredients', 'strMealThumb']].copy()
 
 # Load existing ratings
 ratings_file_path = os.path.join(base_dir, 'ratings.json')
@@ -179,7 +176,7 @@ if meal_search or category_search or area_search or tags_search or ingredients_s
         with col1:
             st.markdown("<br><br>", unsafe_allow_html=True)  # Add vertical space above the image
             if row['strMealThumb'] is not None:
-                st.image(row['strMealThumb'], caption=row['strMeal'], use_container_width=True)
+                st.image(row['strMealThumb'], width=100)  # Make the image smaller
             else:
                 st.write("Image not available")
         with col2:
@@ -216,17 +213,11 @@ if meal_search or category_search or area_search or tags_search or ingredients_s
 
             # Display similarity information
             with st.expander("Similarity"):
-                top_similar_items = find_top_similar_items(row['isolated_ingredients'], df_strMeal_isolated_ingredients)
+                top_similar_items = find_top_similar_items(row['isolated_ingredients'], similarity_df)
                 for sim_index, sim_row in top_similar_items.iterrows():
-                    st.write(f"{sim_row['strMeal']} - Similarity: {sim_row['similarity']:.2f}")
+                    st.write(f"**{sim_row['strMeal']}**")
+                    st.image(sim_row['strMealThumb'], width=100)  # Make the image smaller
 
             st.write(f"**Source:** {row['strSource']}")
 else:
     st.write("Please enter search criteria to display results.")
-
-# Remove or comment out the lines displaying the DataFrames
-#st.write("Combined DataFrame:")
-#st.dataframe(combined_df)
-
-# st.write("DataFrame with strMeal and isolated_ingredients:")
-# st.dataframe(df_strMeal_isolated_ingredients)
