@@ -145,35 +145,33 @@ if meal_search or category_search or area_search or tags_search or ingredients_s
         ingredients = re.findall(r'"(.*?)"|(\S+)', ingredients_search)
         ingredients = [item[0] or item[1] for item in ingredients]
         for ingredient in ingredients:
+            plural_ingredient = ingredient + 's?'
             if ' ' in ingredient:
-                combined_df = combined_df[combined_df['ingredients'].str.contains(re.escape(ingredient), case=False, na=False)]
+                combined_df = combined_df[
+                    combined_df['ingredients'].str.contains(r'\b' + re.escape(plural_ingredient) + r'\b', case=False,
+                                                            na=False)]
             else:
-                combined_df = combined_df[combined_df['ingredients'].str.contains(ingredient, case=False, na=False)]
+                combined_df = combined_df[
+                    combined_df['ingredients'].str.contains(r'\b' + plural_ingredient + r'\b', case=False, na=False)]
     if min_star_rating:
         if min_star_rating != '':
             min_star_rating_numeric = star_rating_to_numeric(min_star_rating)
             combined_df['avg_rating'] = combined_df.apply(lambda row: ratings.get(row['strMeal'], {'total': 0, 'count': 0})['total'] / ratings.get(row['strMeal'], {'total': 0, 'count': 0})['count'] if ratings.get(row['strMeal'], {'total': 0, 'count': 0})['count'] > 0 else 0, axis=1)
             combined_df = combined_df[combined_df['avg_rating'] >= min_star_rating_numeric]
     if vegetarian_filter:
-        non_vegetarian_ingredients = 'beef|pork|chicken|turkey|lamb|veal|venison|duck|goose|rabbit|bison|goat|ham|bacon|sausage|salami|pepperoni|prosciutto|anchovies|tuna|salmon|shrimp|crab|lobster|clams|mussels|oysters|scallops'
+        non_vegetarian_ingredients = r'\b(beef|pork|chicken|turkey|lamb|veal|venison|duck|goose|rabbit|bison|goat|ham|bacon|sausage|salami|pepperoni|prosciutto|anchovies|tuna|salmon|shrimp|crab|lobster|clams|mussels|oysters|scallops)\b'
         combined_df = combined_df[
             ~combined_df['ingredients'].str.contains(non_vegetarian_ingredients, case=False, na=False)]
     if kosher_filter:
-        non_kosher_ingredients = (
-            'shrimp|pork|ham|bacon|lobster|crab|clams|oysters|scallops|mussels|'
-            'shellfish|catfish|eel|frog|octopus|squid|snail|caviar|sturgeon'
-        )
+        non_kosher_ingredients = r'\b(shrimp|pork|ham|bacon|lobster|crab|clams|oysters|scallops|mussels|shellfish|catfish|eel|frog|octopus|squid|snail|caviar|sturgeon|Worcestershire Sauce)\b'
         combined_df = combined_df[
             ~combined_df['ingredients'].str.contains(non_kosher_ingredients, case=False, na=False)
         ]
-        meat_ingredients = (
-            'meat|beef|lamb|chicken|turkey|veal|venison|duck|goose|rabbit|bison|goat|'
-            'sausage|salami|pepperoni|prosciutto|shrimp|crab|lobster|'
-            'clams|mussels|oysters|scallops'
-        )
+        meat_ingredients = r'\b(meat|beef|lamb|chicken|turkey|veal|venison|duck|goose|rabbit|bison|goat|sausage|salami|pepperoni|prosciutto|shrimp|crab|lobster|clams|mussels|oysters|scallops)\b'
         combined_df = combined_df[
             ~((combined_df['ingredients'].str.contains(meat_ingredients, case=False, na=False)) &
-              (combined_df['ingredients'].str.contains('milk|cheese|yogurt|butter|sour cream', case=False, na=False)))
+              (combined_df['ingredients'].str.contains(r'\b(milk|cheese|yogurt|butter|sour cream)\b', case=False,
+                                                       na=False)))
         ]
     if min_ingredients is not None and max_ingredients is not None:
         combined_df = combined_df[
