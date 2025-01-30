@@ -101,7 +101,7 @@ combined_df['strInstructions'] = combined_df.apply(
 )
 
 # Streamlit app with a single tab
-st.title("Combined Meals and Recipes Data")
+st.title("Recipe Search App")
 
 # Use the centralized search bar
 search_results = search_bar(combined_df, combined_categories, prefix='combined_')
