@@ -9,25 +9,6 @@ from recipes_tab import load_recipes_data
 from spoonacular_tab import load_spoonacular_data
 from similarity import find_top_similar_items
 
-# Custom CSS for consistent layout
-st.markdown("""
-    <style>
-    .block-container {
-        padding: 1rem;
-    }
-    .stButton button {
-        width: 100%;
-    }
-    .stImage img {
-        width: 100%;
-        height: auto;
-    }
-    .stExpander {
-        width: 100%;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-
 base_dir = os.path.dirname(__file__)
 
 # Load the data
